@@ -1,0 +1,110 @@
+name: swasthyogi
+description: "High-reliability hospitality crisis coordination & wellness platform"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.6
+  
+  # Speech-to-Text STT
+  speech_to_text: ^7.3.0
+  
+  # URL Launcher for calls
+  url_launcher: ^6.1.7
+
+  # Package Info
+  package_info_plus: ^4.2.0
+  
+  # Permission Handler for runtime permissions
+  permission_handler: ^11.0.1
+  
+  # HTTP client for Groq API
+  http: ^1.1.0
+  
+  # Text-to-Speech
+  flutter_tts: ^4.0.2
+  
+  # Location for finding nearby doctors
+  geolocator: ^10.1.0
+
+  # Local storage for history
+  shared_preferences: ^2.2.0
+
+  # Connectivity check
+  connectivity_plus: ^6.0.0
+
+  # Vibration
+  vibration: ^2.0.1
+  
+  # Audio for alert tones
+  audioplayers: ^5.2.1
+
+  # Firebase for Cloud Messaging
+  firebase_core: ^3.0.0
+  firebase_messaging: ^15.0.0
+
+  # Localization and Date Formatting
+  intl: ^0.19.0
+
+  # Environment Variables
+  flutter_dotenv: ^5.1.0
+  
+  # Security and Authentication
+  firebase_auth: ^5.0.0
+  google_sign_in: ^6.2.1
+  flutter_secure_storage: ^9.0.0
+
+  # Google Gemini AI (Free Tier)
+  google_generative_ai: ^0.4.7
+
+  # Modern Typography
+  google_fonts: ^6.1.0
+
+  # Data Visualization
+  fl_chart: ^0.66.0
+
+  # State Management
+  provider: ^6.1.2
+  cloud_firestore: ^5.6.12
+  webview_flutter: ^4.13.1
+  flutter_map: ^8.3.0
+  latlong2: ^0.9.1
+  firebase_app_check: ^0.3.2+10
+
+dependency_overrides:
+  win32: ^5.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  
+  flutter_lints: ^2.0.1
+  
+  # Icon generator
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/
+    - assets/doctors.json
+    - assets/emergency_services.json
+    - .env
+
+# Flutter Launcher Icons configuration
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  min_sdk_android: 21 # Required for adaptive icons
+  adaptive_icon_background: "#FFFFFF" 
+  adaptive_icon_foreground: "assets/icon/app_icon.png"
+  remove_alpha_ios: true

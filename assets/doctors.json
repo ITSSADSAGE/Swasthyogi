@@ -1,0 +1,66 @@
+[
+  {
+    "name": "SevenHills Hospital",
+    "specialization": "Multi-Speciality Hospital",
+    "phone": "022 6767 6767",
+    "address": "Marol Maroshi Road, Andheri East, Mumbai",
+    "latitude": 19.1206,
+    "longitude": 72.8808
+  },
+  {
+    "name": "Nanavati Max Super Speciality Hospital",
+    "specialization": "Multi-Speciality Hospital",
+    "phone": "022 6836 0000",
+    "address": "S.V. Road, Vile Parle West, Mumbai",
+    "latitude": 19.1026,
+    "longitude": 72.8373
+  },
+  {
+    "name": "Kokilaben Dhirubhai Ambani Hospital",
+    "specialization": "Multi-Speciality Hospital",
+    "phone": "022 4269 6969",
+    "address": "Rao Saheb, Achutrao Patwardhan Marg, Andheri West, Mumbai",
+    "latitude": 19.1311,
+    "longitude": 72.8252
+  },
+  {
+    "name": "Dr. L H Hiranandani Hospital",
+    "specialization": "Multi-Speciality Hospital",
+    "phone": "022 2576 3300",
+    "address": "Hiranandani Gardens, Powai, Mumbai",
+    "latitude": 19.1171,
+    "longitude": 72.9115
+  },
+  {
+    "name": "Holy Spirit Hospital",
+    "specialization": "Multi-Speciality Hospital",
+    "phone": "022 2824 8500",
+    "address": "Mahakali Caves Rd, Andheri East, Mumbai",
+    "latitude": 19.1278,
+    "longitude": 72.8714
+  },
+  {
+    "name": "Lilavati Hospital and Research Centre",
+    "specialization": "Multi-Speciality Hospital",
+    "phone": "022 2675 1000",
+    "address": "A-791, Bandra Reclamation Rd, Mumbai",
+    "latitude": 19.0514,
+    "longitude": 72.8229
+  },
+  {
+    "name": "Lokmanya Tilak Hospital (Sion)",
+    "specialization": "Government Hospital",
+    "phone": "022 2407 6381",
+    "address": "Sion, Mumbai",
+    "latitude": 19.0366,
+    "longitude": 72.8599
+  },
+  {
+    "name": "KEM Hospital",
+    "specialization": "Government Hospital",
+    "phone": "022 2410 7000",
+    "address": "Acharya Donde Marg, Parel, Mumbai",
+    "latitude": 19.0024,
+    "longitude": 72.8427
+  }
+]

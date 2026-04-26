@@ -1,0 +1,34 @@
+[
+  {
+    "name": "General Hospital",
+    "specialization": "Hospital",
+    "phone": "102",
+    "address": "Hospital Road, City Center",
+    "latitude": 18.5204,
+    "longitude": 73.8567
+  },
+  {
+    "name": "Central Police Station",
+    "specialization": "Police",
+    "phone": "100",
+    "address": "Police Line, Main Market",
+    "latitude": 18.5362,
+    "longitude": 73.8940
+  },
+  {
+    "name": "City Fire Station",
+    "specialization": "Fire Station",
+    "phone": "101",
+    "address": "Fire Brigade Road",
+    "latitude": 18.5196,
+    "longitude": 73.8427
+  },
+  {
+    "name": "Ambulance Service",
+    "specialization": "Ambulance",
+    "phone": "108",
+    "address": "Emergency Response Hub",
+    "latitude": 18.4900,
+    "longitude": 73.8550
+  }
+]

@@ -30,6 +30,17 @@ class DatabaseService {
     }
   }
 
+  static Future<Map<String, dynamic>?> getUserProfile() async {
+    if (_userId == null) return null;
+    try {
+      final doc = await _db.collection('users').doc(_userId).get();
+      return doc.data();
+    } catch (e) {
+      print("Error fetching profile from Firestore: $e");
+      return null;
+    }
+  }
+
   /// --------------------------------------------------------------------------
   /// 2. EMERGENCY LOGS & INCIDENTS
   /// --------------------------------------------------------------------------

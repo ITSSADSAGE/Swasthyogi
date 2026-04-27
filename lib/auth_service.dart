@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'profile_manager.dart';
 
 class AuthResult {
   final User? user;
@@ -78,7 +79,10 @@ class AuthService {
       print("AuthService: Google Sign-In successful for ${result.user?.email}");
       return AuthResult(user: result.user, isNewUser: result.additionalUserInfo?.isNewUser ?? false);
     } on FirebaseAuthException catch (e) {
-      print("AuthService: FirebaseAuthException: ${e.code} - ${e.message}");
+      if (e.code == 'account-exists-with-different-credential') {
+        // Here we could implement advanced linking logic if needed
+        print("AuthService: Account exists with different provider. Please use manual login or link account.");
+      }
       return AuthResult(errorCode: e.code, errorMessage: e.message);
     } catch (e) {
       print("AuthService: Unexpected error during Google Sign-In: $e");
@@ -99,13 +103,19 @@ class AuthService {
 
   // Logout
   Future<void> logout() async {
-    try {
-      await _googleSignIn.signOut();
-      await _auth.signOut();
-      await _storage.deleteAll();
-    } catch (e) {
-      print("Logout Error: $e");
-    }
+    await _auth.signOut();
+    await _googleSignIn.signOut();
+    await ProfileManager.clearProfile();
+    await _storage.deleteAll(); // Clear security passwords for testing
+    print("AuthService: User logged out and all data cleared.");
+  }
+
+  // Force Google account picker to show up again
+  Future<void> disconnectGoogle() async {
+    await _googleSignIn.disconnect();
+    await _auth.signOut();
+    await _storage.deleteAll(); // Clear security passwords for testing
+    print("AuthService: Google account disconnected and data wiped.");
   }
 
   // Securely store data
@@ -162,5 +172,11 @@ class AuthService {
       print("Link Phone Error: $e");
       return false;
     }
+  }
+
+  // Check if security password exists (for Google users)
+  Future<bool> hasSecurityPassword() async {
+    final password = await readSecureData('security_password');
+    return password != null && password.isNotEmpty;
   }
 }

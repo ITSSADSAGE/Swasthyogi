@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'database_service.dart';
 
 class UserProfile {
   String name;
@@ -102,6 +103,13 @@ class ProfileManager {
   static const String _keyStayLoc = 'profile_stayLoc';
   static const String _keyRoomNum = 'profile_roomNum';
   static const String _keyReception = 'profile_reception';
+  static const String _keyOnboardingComplete = 'onboarding_completed';
+  static const String _keyForceOnboarding = 'force_onboarding_debug';
+
+  static Future<void> setForceOnboarding(bool force) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyForceOnboarding, force);
+  }
 
   static Future<void> saveProfile(UserProfile profile) async {
     final prefs = await SharedPreferences.getInstance();
@@ -122,6 +130,9 @@ class ProfileManager {
     await prefs.setString(_keyStayLoc, profile.stayLocation);
     await prefs.setString(_keyRoomNum, profile.roomNumber);
     await prefs.setString(_keyReception, profile.receptionContact);
+    
+    // Sync to Cloud Firestore
+    await DatabaseService.saveUserProfile(profile.toMap());
   }
 
   static Future<UserProfile> getProfile() async {
@@ -150,5 +161,52 @@ class ProfileManager {
   static Future<void> clearProfile() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear(); // Clear everything
+    await prefs.setBool(_keyForceOnboarding, true); // Force onboarding after reset
+  }
+
+  static Future<void> setOnboardingComplete(bool complete) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyOnboardingComplete, complete);
+    await prefs.setBool(_keyForceOnboarding, false); // Clear debug flag
+  }
+
+  static Future<bool> isProfileComplete({bool checkCloud = true}) async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Check if we are forcing onboarding for testing
+    if (prefs.getBool(_keyForceOnboarding) ?? false) {
+      return false;
+    }
+
+    bool complete = prefs.getBool(_keyOnboardingComplete) ?? false;
+    
+    // If not complete locally, check if we have data in the cloud
+    if (!complete && checkCloud) {
+      final cloudData = await DatabaseService.getUserProfile();
+      if (cloudData != null && cloudData.isNotEmpty) {
+        // Map dynamic to string map
+        final Map<String, String> stringMap = {};
+        cloudData.forEach((key, value) {
+          stringMap[key] = value.toString();
+        });
+        
+        await saveProfile(UserProfile.fromMap(stringMap));
+        await setOnboardingComplete(true);
+        return true;
+      }
+    }
+    return complete;
+  }
+
+  static Future<void> syncFromCloud() async {
+    final cloudData = await DatabaseService.getUserProfile();
+    if (cloudData != null && cloudData.isNotEmpty) {
+      final Map<String, String> stringMap = {};
+      cloudData.forEach((key, value) {
+        stringMap[key] = value.toString();
+      });
+      await saveProfile(UserProfile.fromMap(stringMap));
+      await setOnboardingComplete(true);
+    }
   }
 }

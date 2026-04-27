@@ -98,7 +98,7 @@ class _LandingScreenState extends State<LandingScreen>
               height: size.width * 0.7,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.primaryGreen.withOpacity(0.08),
+                color: AppTheme.medicalBlue.withOpacity(0.08),
               ),
             ),
           ),
@@ -112,7 +112,7 @@ class _LandingScreenState extends State<LandingScreen>
               height: size.width * 0.55,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.primaryGreen.withOpacity(0.06),
+                color: AppTheme.medicalBlue.withOpacity(0.06),
               ),
             ),
           ),
@@ -134,13 +134,13 @@ class _LandingScreenState extends State<LandingScreen>
                       Container(
                         padding: const EdgeInsets.all(22),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryGreen.withOpacity(0.12),
+                          color: AppTheme.medicalBlue.withOpacity(0.12),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.favorite_rounded,
                           size: 56,
-                          color: AppTheme.primaryGreen,
+                          color: AppTheme.medicalBlue,
                         ),
                       ),
                       const SizedBox(height: 28),
@@ -151,7 +151,7 @@ class _LandingScreenState extends State<LandingScreen>
                         style: GoogleFonts.outfit(
                           fontSize: 36,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF1B4332),
+                          color: isDark ? Colors.white : const Color(0xFF1B3B5E),
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -198,7 +198,7 @@ class _LandingScreenState extends State<LandingScreen>
                                     SignupScreen(language: widget.language)),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryGreen,
+                            backgroundColor: AppTheme.medicalBlue,
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
@@ -226,7 +226,7 @@ class _LandingScreenState extends State<LandingScreen>
                           ),
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(
-                                color: AppTheme.primaryGreen, width: 1.5),
+                                color: AppTheme.medicalBlue, width: 1.5),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16)),
                           ),
@@ -235,7 +235,7 @@ class _LandingScreenState extends State<LandingScreen>
                             style: GoogleFonts.outfit(
                               fontSize: 17,
                               fontWeight: FontWeight.w600,
-                              color: AppTheme.primaryGreen,
+                              color: AppTheme.medicalBlue,
                             ),
                           ),
                         ),
@@ -257,12 +257,12 @@ class _LandingScreenState extends State<LandingScreen>
                                 borderRadius: BorderRadius.circular(16)),
                           ),
                           child: _googleLoading
-                              ? SizedBox(
+                              ? const SizedBox(
                                   width: 22,
                                   height: 22,
                                   child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      color: AppTheme.primaryGreen),
+                                      color: AppTheme.medicalBlue),
                                 )
                               : Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -313,12 +313,12 @@ class _LandingScreenState extends State<LandingScreen>
       decoration: BoxDecoration(
         color: isDark
             ? Colors.white.withOpacity(0.06)
-            : AppTheme.primaryGreen.withOpacity(0.08),
+            : AppTheme.medicalBlue.withOpacity(0.08),
         borderRadius: BorderRadius.circular(30),
         border: Border.all(
           color: isDark
               ? Colors.white10
-              : AppTheme.primaryGreen.withOpacity(0.2),
+              : AppTheme.medicalBlue.withOpacity(0.2),
         ),
       ),
       child: Text(

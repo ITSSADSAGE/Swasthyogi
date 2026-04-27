@@ -22,6 +22,7 @@ class AIService {
       }
     }
     
+    print("AIService: Loaded ${_apiKeys.length} API keys.");
     _initModel();
   }
 
@@ -29,13 +30,14 @@ class AIService {
 
   String get _currentKey => _apiKeys.isNotEmpty ? _apiKeys[_currentKeyIndex] : "";
 
-  void _initModel() {
+  void _initModel({String modelName = 'gemini-1.5-flash'}) {
     if (_currentKey.isEmpty) {
       print("Warning: No Gemini API Keys found. Chatbot will run in offline mode.");
       return;
     }
+    print("AIService: Initializing model $modelName");
     _model = GenerativeModel(
-      model: 'gemini-1.5-flash',
+      model: modelName,
       apiKey: _currentKey,
       systemInstruction: Content.system(_getSystemPrompt()),
     );
@@ -136,13 +138,21 @@ SERVICE REFERRAL:
     } catch (e) {
       print("Gemini AI Error: $e");
       
+      // If the cheap model (flash) is not found, fallback to pro immediately
+      if (e.toString().contains("not found") || e.toString().contains("404")) {
+        print("AIService: Model not found, falling back to gemini-pro...");
+        _initModel(modelName: 'gemini-pro');
+        return await getAIResponse(userMessage);
+      }
+      
       // If we have more keys, try rotating and retrying (one attempt)
       if (_apiKeys.length > 1 && !e.toString().contains("API_KEY_INVALID")) {
+        print("AIService: Error detected, rotating keys... Current index: $_currentKeyIndex");
         _rotateKey();
         try {
           return await getAIResponse(userMessage);
         } catch (retryError) {
-          print("Retry also failed: $retryError");
+          print("AIService: Retry also failed: $retryError");
         }
       }
       

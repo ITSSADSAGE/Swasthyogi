@@ -5,6 +5,7 @@ import 'unified_dashboard.dart';
 import 'signup_screen.dart';
 import 'personalization_flow.dart';
 import 'theme.dart';
+import 'profile_manager.dart';
 
 class LoginScreen extends StatefulWidget {
   final String language;
@@ -20,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _authService = AuthService();
   bool _isLoading = false;
   bool _isPasswordVisible = false;
+  int _resetTaps = 0;
 
   Future<void> _handleLogin() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
@@ -35,7 +37,20 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (result.isSuccess) {
-      _navigateToDashboard();
+      final isComplete = await ProfileManager.isProfileComplete();
+      print("LoginScreen: Email login success. isComplete: $isComplete");
+      if (!isComplete) {
+        if (mounted) {
+          print("LoginScreen: Navigating to PersonalizationFlow");
+          Navigator.pushReplacement(
+            context, 
+            MaterialPageRoute(builder: (_) => const PersonalizationFlow(isGoogleUser: false))
+          );
+        }
+      } else {
+        print("LoginScreen: Navigating to Dashboard");
+        _navigateToDashboard();
+      }
     } else {
       switch (result.errorCode) {
         case 'user-not-found':
@@ -60,13 +75,27 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (result.isSuccess) {
-      if (result.isNewUser) {
-        Navigator.pushReplacement(
-          context, 
-          MaterialPageRoute(builder: (_) => PersonalizationFlow())
-        );
-      } else {
-        _navigateToDashboard();
+      final isGoogleUser = result.user?.providerData.any((p) => p.providerId == 'google.com') ?? false;
+      bool needsOnboarding = !(await ProfileManager.isProfileComplete());
+      print("LoginScreen: Google login success. needsOnboarding: $needsOnboarding");
+      
+      if (isGoogleUser && !needsOnboarding) {
+        // Force onboarding if Security Password is missing even if profile is complete
+        needsOnboarding = !(await _authService.hasSecurityPassword());
+        print("LoginScreen: Checking security password. needsOnboarding now: $needsOnboarding");
+      }
+
+      if (mounted) {
+        if (needsOnboarding) {
+          print("LoginScreen: Navigating to PersonalizationFlow");
+          Navigator.pushReplacement(
+            context, 
+            MaterialPageRoute(builder: (_) => PersonalizationFlow(isGoogleUser: isGoogleUser))
+          );
+        } else {
+          print("LoginScreen: Navigating to Dashboard");
+          _navigateToDashboard();
+        }
       }
     } else if (result.errorCode != 'cancelled') {
       _showError("Google sign-in failed. Please try again.");
@@ -99,13 +128,28 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppTheme.medicalBlue.withOpacity(0.1),
-                    shape: BoxShape.circle,
+                child: GestureDetector(
+                  onTap: () async {
+                    _resetTaps++;
+                    if (_resetTaps >= 5) {
+                      _resetTaps = 0;
+                      await _authService.disconnectGoogle();
+                      await ProfileManager.clearProfile();
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Session Hard Reset Complete"), backgroundColor: Colors.orange)
+                        );
+                      }
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.medicalBlue.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Image.asset('assets/icon/app_icon.png', width: 80, height: 80),
                   ),
-                  child: Icon(Icons.medical_services_outlined, size: 60, color: AppTheme.medicalBlue),
                 ),
               ),
               const SizedBox(height: 40),

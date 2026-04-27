@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'theme.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AnalyticsScreen extends StatefulWidget {
   final String language;
@@ -14,6 +15,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   bool get isHindi => widget.language == "हिंदी" || widget.language == "Hindi";
   bool get isMarathi => widget.language == "मराठी" || widget.language == "Marathi";
+  bool get isDemoUser => FirebaseAuth.instance.currentUser?.email == 'demo@swasthyogi.app';
 
   @override
   Widget build(BuildContext context) {
@@ -29,11 +31,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildChartCard("Wellness Trends (Weekly)", _buildLineChart(AppTheme.medicalBlue)),
+            _buildChartCard("Wellness Trends (Weekly)", isDemoUser ? _buildLineChart(AppTheme.medicalBlue) : _buildEmptyState("Log health data to see trends")),
             const SizedBox(height: 20),
-            _buildChartCard("Incident Frequency", _buildBarChart(Colors.red)),
+            _buildChartCard("Incident Frequency", isDemoUser ? _buildBarChart(Colors.red) : _buildEmptyState("No incidents logged yet")),
             const SizedBox(height: 20),
-            _buildChartCard("Severity Breakdown", _buildPieChart()),
+            _buildChartCard("Severity Breakdown", isDemoUser ? _buildPieChart() : _buildEmptyState("N/A")),
             const SizedBox(height: 24),
             _buildInsightsCard(),
           ],
@@ -134,14 +136,36 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             children: [
               Icon(Icons.lightbulb_outline, color: AppTheme.accentCyan),
               SizedBox(width: 8),
-              Text("Key Insights", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.accentCyan)),
+              Text(
+                "Key Insights",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.accentCyan,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
-          const Text(
-            "Stress levels correlate with lower sleep duration. Your mood has improved by 20% compared to last week.\n\nCritical incidents peaked on Tuesday. Average response time has decreased by 15% this week.",
-            style: TextStyle(fontSize: 14),
+          Text(
+            isDemoUser
+                ? "Stress levels correlate with lower sleep duration. Your mood has improved by 20% compared to last week.\n\nCritical incidents peaked on Tuesday. Average response time has decreased by 15% this week."
+                : "Complete your daily check-ins and log emergency incidents to see AI-powered health insights here.",
+            style: const TextStyle(fontSize: 14),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.query_stats, color: Colors.grey.withOpacity(0.5), size: 40),
+          const SizedBox(height: 8),
+          Text(message, style: TextStyle(color: Colors.grey.withOpacity(0.8), fontSize: 12)),
         ],
       ),
     );

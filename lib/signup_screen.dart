@@ -22,15 +22,9 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _dobController = TextEditingController();
   
-  // Optional stay details
-  final _stayLocationController = TextEditingController();
-  final _roomNumberController = TextEditingController();
-  final _receptionContactController = TextEditingController();
-
   final _authService = AuthService();
   bool _isLoading = false;
   bool _isPasswordVisible = false;
-  bool _showStayDetails = false;
   late String _selectedLanguage;
 
   @override
@@ -67,24 +61,29 @@ class _SignupScreenState extends State<SignupScreen> {
     final result = await _authService.signUpWithEmail(email, password, name);
     
     if (result.isSuccess) {
+      // Clear any existing local profile data from previous sessions on this device
+      await ProfileManager.clearProfile();
+      
       // Save profile details
       await ProfileManager.saveProfile(UserProfile(
         name: name,
         email: email,
         phone: _phoneController.text.trim(),
         dob: _dobController.text.trim(),
-        stayLocation: _stayLocationController.text.trim(),
-        roomNumber: _roomNumberController.text.trim(),
-        receptionContact: _receptionContactController.text.trim(),
       ));
     }
     
     setState(() => _isLoading = false);
 
     if (result.isSuccess) {
+      final isComplete = await ProfileManager.isProfileComplete(checkCloud: false);
+      print("SignupScreen: Email signup success. isComplete: $isComplete");
+      
       if (mounted) {
+        // For fresh signups, we ALWAYS want personalization
+        print("SignupScreen: Navigating to PersonalizationFlow (isGoogleUser: false)");
         Navigator.pushReplacement(context,
-            MaterialPageRoute(builder: (_) => const PersonalizationFlow()));
+            MaterialPageRoute(builder: (_) => const PersonalizationFlow(isGoogleUser: false)));
       }
     } else {
       _handleAuthError(result.errorCode, email);
@@ -97,15 +96,28 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => _isLoading = false);
 
     if (result.isSuccess) {
+      // Always clear local profile to force fresh onboarding when using the Signup screen
+      await ProfileManager.clearProfile();
+      
+      final isGoogleUser = result.user?.providerData.any((p) => p.providerId == 'google.com') ?? false;
+      bool needsOnboarding = !(await ProfileManager.isProfileComplete(checkCloud: false));
+      print("SignupScreen: Google signup success. needsOnboarding: $needsOnboarding");
+      
+      if (isGoogleUser && !needsOnboarding) {
+        needsOnboarding = !(await _authService.hasSecurityPassword());
+        print("SignupScreen: Checking security password. needsOnboarding now: $needsOnboarding");
+      }
+
       if (mounted) {
-        // Google users skip personalization if they've signed in before;
-        // for new users Flutter will land them on the dashboard (Firebase
-        // handles de-duplication automatically).
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (_) => PersonalizationFlow()),
-        );
+        if (needsOnboarding) {
+          print("SignupScreen: Navigating to PersonalizationFlow (isGoogleUser: $isGoogleUser)");
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (_) => PersonalizationFlow(isGoogleUser: isGoogleUser)));
+        } else {
+          print("SignupScreen: Navigating to Dashboard");
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (_) => UnifiedDashboard(language: _selectedLanguage)));
+        }
       }
     } else if (result.errorCode != 'cancelled') {
       _showError("Google sign-up failed. Please try again.");
@@ -117,6 +129,9 @@ class _SignupScreenState extends State<SignupScreen> {
       case 'email-already-in-use':
         _showEmailExistsDialog(email);
         break;
+      case 'account-exists-with-different-credential':
+        _showError("This email is linked to a Google account. Please use 'Sign in with Google' instead.");
+        break;
       case 'weak-password':
         _showError("Password is too weak. Use at least 8 characters with letters, numbers & symbols.");
         break;
@@ -124,7 +139,7 @@ class _SignupScreenState extends State<SignupScreen> {
         _showError("The email address is not valid.");
         break;
       default:
-        _showError("Signup failed. Please try again.");
+        _showError("Signup failed: ${code ?? 'Unknown error'}. Please try again.");
     }
   }
 
@@ -245,11 +260,40 @@ class _SignupScreenState extends State<SignupScreen> {
                   isPhone: true),
               const SizedBox(height: 20),
 
-              _buildLabel("Date of Birth (DD/MM/YYYY)"),
-              _buildTextField(
-                  controller: _dobController,
-                  hint: "01/01/1990",
-                  icon: Icons.calendar_today_outlined),
+              _buildLabel("Date of Birth"),
+              GestureDetector(
+                onTap: () async {
+                  DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime(1995),
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime.now(),
+                    builder: (context, child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: ColorScheme.fromSeed(
+                            seedColor: AppTheme.medicalBlue,
+                            brightness: Theme.of(context).brightness,
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+                  if (pickedDate != null) {
+                    setState(() {
+                      _dobController.text = "${pickedDate.day.toString().padLeft(2, '0')}/${pickedDate.month.toString().padLeft(2, '0')}/${pickedDate.year}";
+                    });
+                  }
+                },
+                child: AbsorbPointer(
+                  child: _buildTextField(
+                    controller: _dobController,
+                    hint: "Select your birthday",
+                    icon: Icons.calendar_today_outlined,
+                  ),
+                ),
+              ),
               const SizedBox(height: 20),
 
               _buildLabel("Email Address"),
@@ -272,65 +316,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
               const SizedBox(height: 30),
 
-              // Optional Stay Details Section
-              GestureDetector(
-                onTap: () => setState(() => _showStayDetails = !_showStayDetails),
-                child: Row(
-                  children: [
-                    Icon(
-                      _showStayDetails ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                      color: AppTheme.medicalBlue,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      "Stay Details (Optional - Hotel/Dorm)",
-                      style: GoogleFonts.outfit(
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.medicalBlue,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              if (_showStayDetails) ...[
-                const SizedBox(height: 20),
-                _buildLabel("Hotel/Dormitory Name"),
-                _buildTextField(
-                    controller: _stayLocationController,
-                    hint: "e.g. Taj Hotel / Heritage Dorm",
-                    icon: Icons.hotel_outlined),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildLabel("Room Number"),
-                          _buildTextField(
-                              controller: _roomNumberController,
-                              hint: "302",
-                              icon: Icons.meeting_room_outlined),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildLabel("Reception Number"),
-                          _buildTextField(
-                              controller: _receptionContactController,
-                              hint: "022-XXXX",
-                              icon: Icons.phone_callback_outlined),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              const SizedBox(height: 10),
 
               const SizedBox(height: 40),
 

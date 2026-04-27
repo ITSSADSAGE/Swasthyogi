@@ -31,6 +31,7 @@ import 'widgets/nearby_facilities_panel.dart';
 import 'auth_service.dart';
 import 'login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'profile_manager.dart';
 
 class UnifiedDashboard extends StatefulWidget {
   final String language;
@@ -44,21 +45,51 @@ class _UnifiedDashboardState extends State<UnifiedDashboard> {
   late String selectedLanguage;
   bool isEmergencyMode = true;
   List<JournalEntry> recentEntries = [];
+  UserProfile? _userProfile;
+  bool _isProfileLoading = true;
 
-  // Wellness Stats
-  double stressLevel = 0.45;
-  double hydrationLevel = 0.5;
-  double activityLevel = 0.5;
-  int sleepHours = 7;
-  int steps = 6842;
-  int bpm = 74;
+  // Wellness Stats (Reset to 0 for fresh accounts)
+  double stressLevel = 0.0;
+  double hydrationLevel = 0.0;
+  double activityLevel = 0.0;
+  int sleepHours = 0;
+  int steps = 0;
+  int bpm = 0;
 
   @override
   void initState() {
     super.initState();
     selectedLanguage = widget.language;
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && user.email == 'demo@swasthyogi.app') {
+      // Load Demo Data for presentation
+      setState(() {
+        stressLevel = 0.45;
+        hydrationLevel = 0.5;
+        activityLevel = 0.5;
+        sleepHours = 7;
+        steps = 6842;
+        bpm = 74;
+      });
+    }
+    
+    await _loadProfile();
     _loadJournalPreview();
     _requestPermissions();
+  }
+
+  Future<void> _loadProfile() async {
+    final profile = await ProfileManager.getProfile();
+    if (mounted) {
+      setState(() {
+        _userProfile = profile;
+        _isProfileLoading = false;
+      });
+    }
   }
 
   Future<void> _requestPermissions() async {
@@ -273,13 +304,24 @@ class _UnifiedDashboardState extends State<UnifiedDashboard> {
   }
 
   Widget _buildHeader() {
+    final name = _userProfile?.name ?? "User";
+    final goal = _userProfile?.mainGoal ?? "";
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          isMarathi ? "नमस्कार, आरोग्यदायी रहा" : (isHindi ? "नमस्ते, स्वस्थ रहें" : "Hello, Stay Healthy"),
+          isMarathi ? "नमस्कार, $name" : (isHindi ? "नमस्ते, $name" : "Hello, $name"),
           style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
         ),
+        if (goal.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 4.0),
+            child: Text(
+              isMarathi ? "तुमचे ध्येय: $goal" : (isHindi ? "आपका लक्ष्य: $goal" : "Focusing on: $goal"),
+              style: TextStyle(color: AppTheme.medicalBlue, fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
         Text(
           isMarathi ? "आज तुमचे आरोग्य कसे आहे?" : (isHindi ? "आज आपका स्वास्थ्य कैसा है?" : "How is your health today?"),
           style: const TextStyle(color: Colors.grey, fontSize: 16),
@@ -418,6 +460,25 @@ class _UnifiedDashboardState extends State<UnifiedDashboard> {
 
   Widget _buildRecommendations(BuildContext context) {
     final theme = Theme.of(context);
+    final goal = _userProfile?.mainGoal?.toLowerCase() ?? "";
+    
+    String rec1Title = "Improve your sleep routine";
+    String rec1Sub = "Getting 7-8 hours of sleep helps recovery.";
+    IconData rec1Icon = Icons.nightlight_round;
+    Color rec1Color = Colors.purple;
+
+    if (goal.contains("weight") || goal.contains("muscle")) {
+      rec1Title = "Daily Protein Target";
+      rec1Sub = "Based on your weight, aim for 60g+ protein today.";
+      rec1Icon = Icons.fitness_center;
+      rec1Color = Colors.orange;
+    } else if (goal.contains("mental") || goal.contains("stress")) {
+      rec1Title = "Mindful Minute";
+      rec1Sub = "Take 60 seconds to breathe and ground yourself.";
+      rec1Icon = Icons.spa;
+      rec1Color = Colors.teal;
+    }
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -431,15 +492,15 @@ class _UnifiedDashboardState extends State<UnifiedDashboard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("For you today", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text("Tailored for you", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               TextButton(onPressed: () {}, child: const Text("Update →", style: TextStyle(color: AppTheme.medicalBlue))),
             ],
           ),
-          Text("Based on your recent activity", style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 12)),
+          Text(isMarathi ? "तुमच्या प्रोफाइलवर आधारित" : (isHindi ? "आपके प्रोफाइल के आधार पर" : "Based on your personalization"), style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 12)),
           const SizedBox(height: 16),
-          _recItem(context, Icons.nightlight_round, "Improve your sleep routine", "You have been sleeping under 7 hours for 5 days...", "Start wind-down routine", Colors.purple),
+          _recItem(context, rec1Icon, rec1Title, rec1Sub, "View Details", rec1Color),
           const SizedBox(height: 12),
-          _recItem(context, Icons.water_drop, "Drink more water", "Your daily water intake is below the target...", "Set water reminder", Colors.blue),
+          _recItem(context, Icons.water_drop, "Hydration Goal", "Drink at least 2.5L of water today.", "Set reminder", Colors.blue),
         ],
       ),
     );

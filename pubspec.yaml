@@ -95,6 +95,7 @@ flutter:
 
   assets:
     - assets/
+    - assets/icon/
     - assets/doctors.json
     - assets/emergency_services.json
     - .env

@@ -5,6 +5,8 @@ import 'unified_dashboard.dart';
 import 'unified_onboarding_screen.dart';
 import 'landing_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'personalization_flow.dart';
+import 'profile_manager.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -41,7 +43,19 @@ class _SplashScreenState extends State<SplashScreen> {
     final onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
 
     // 4. Check Authentication
-    final user = FirebaseAuth.instance.currentUser;
+    final auth = FirebaseAuth.instance;
+    User? user = auth.currentUser;
+    bool isProfileComplete = await ProfileManager.isProfileComplete();
+
+    if (user != null) {
+      try {
+        await user.reload();
+        user = auth.currentUser;
+      } catch (e) {
+        await auth.signOut();
+        user = null;
+      }
+    }
 
     // 5. Navigate to appropriate screen
     if (mounted) {
@@ -51,10 +65,18 @@ class _SplashScreenState extends State<SplashScreen> {
           MaterialPageRoute(builder: (context) => const UnifiedOnboardingScreen()),
         );
       } else if (user != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const UnifiedDashboard(language: "English")),
-        );
+        if (!isProfileComplete) {
+          // If logged in but questions not finished, force flow
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const PersonalizationFlow()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const UnifiedDashboard(language: "English")),
+          );
+        }
       } else {
         Navigator.pushReplacement(
           context,

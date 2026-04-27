@@ -6,7 +6,8 @@ import 'profile_manager.dart';
 import 'auth_service.dart';
 
 class PersonalizationFlow extends StatefulWidget {
-  const PersonalizationFlow({super.key});
+  final bool isGoogleUser;
+  const PersonalizationFlow({super.key, this.isGoogleUser = false});
 
   @override
   State<PersonalizationFlow> createState() => _PersonalizationFlowState();
@@ -14,7 +15,15 @@ class PersonalizationFlow extends StatefulWidget {
 
 class _PersonalizationFlowState extends State<PersonalizationFlow> {
   int _currentStep = 1;
-  final int _totalSteps = 6;
+  late int _totalSteps;
+  late bool _isGoogleUser;
+
+  @override
+  void initState() {
+    super.initState();
+    _isGoogleUser = widget.isGoogleUser;
+    _totalSteps = _isGoogleUser ? 6 : 5;
+  }
 
   // Data State
   String _selectedGender = "Male";
@@ -71,6 +80,7 @@ class _PersonalizationFlowState extends State<PersonalizationFlow> {
     profile.stayLocation = _wingController.text;
     
     await ProfileManager.saveProfile(profile);
+    await ProfileManager.setOnboardingComplete(true);
 
     // Save security password for Google users
     if (_securityPasswordController.text.isNotEmpty) {
@@ -107,10 +117,12 @@ class _PersonalizationFlowState extends State<PersonalizationFlow> {
               const SizedBox(height: 24),
               _buildNavigationButtons(),
               const SizedBox(height: 12),
-              TextButton(
-                onPressed: _completeSetup, 
-                child: Text("Skip for now", style: GoogleFonts.outfit(color: Colors.grey))
-              ),
+              // Only allow skipping if we are NOT on the mandatory security step and NOT on the last step
+              if (!(_isGoogleUser && _currentStep == 1) && _currentStep < _totalSteps)
+                TextButton(
+                  onPressed: _nextStep, 
+                  child: Text("Skip this step", style: GoogleFonts.outfit(color: Colors.grey))
+                ),
             ],
           ),
         ),
@@ -158,14 +170,25 @@ class _PersonalizationFlowState extends State<PersonalizationFlow> {
   }
 
   Widget _buildStepContent() {
-    switch (_currentStep) {
-      case 1: return _buildStep1();
-      case 2: return _buildStep2();
-      case 3: return _buildStep3();
-      case 4: return _buildStep4();
-      case 5: return _buildStep5();
-      case 6: return _buildSecurityStep();
-      default: return const SizedBox();
+    if (_isGoogleUser) {
+      switch (_currentStep) {
+        case 1: return _buildSecurityStep();
+        case 2: return _buildStep1();
+        case 3: return _buildStep2();
+        case 4: return _buildStep3();
+        case 5: return _buildStep4();
+        case 6: return _buildStep5();
+        default: return const SizedBox();
+      }
+    } else {
+      switch (_currentStep) {
+        case 1: return _buildStep1();
+        case 2: return _buildStep2();
+        case 3: return _buildStep3();
+        case 4: return _buildStep4();
+        case 5: return _buildStep5();
+        default: return const SizedBox();
+      }
     }
   }
 
@@ -530,7 +553,18 @@ class _PersonalizationFlowState extends State<PersonalizationFlow> {
           child: SizedBox(
             height: 56,
             child: ElevatedButton(
-              onPressed: _nextStep,
+              onPressed: () {
+                // Validate security password if on step 1 for Google users
+                if (_isGoogleUser && _currentStep == 1) {
+                  if (_securityPasswordController.text.length < 6) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Password must be at least 6 characters"), backgroundColor: Colors.orange)
+                    );
+                    return;
+                  }
+                }
+                _nextStep();
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.medicalBlue,
                 foregroundColor: Colors.white,
